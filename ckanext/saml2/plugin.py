@@ -205,12 +205,8 @@ def saml2_user_delete(context, data_dict):
 
 def saml2_set_context_variables_after_check_for_user_update(id):
     c = toolkit.c
-    c.allow_user_change = False
-    user_info = saml2_get_user_info(id)
-    if user_info is not None:
-        c.allow_user_change = toolkit.asbool(
-            config.get('ckan.saml2.allow_user_changes', False))
-        c.is_allow_update = user_info[0].allow_update
+    c.allow_user_change = p.toolkit.asbool(
+        config.get('saml2.allow_user_changes', False))
 
 
 def saml2_user_update(context, data_dict):
@@ -221,37 +217,14 @@ def saml2_user_update(context, data_dict):
     id = logic.get_or_bust(data_dict, 'id')
     name_id = saml2_get_user_name_id(id)
     if name_id is not None:
-        c = toolkit.c
-        saml2_set_context_variables_after_check_for_user_update(id)
-        if c.allow_user_change:
-            checkbox_checked = data_dict.get('checkbox_checked')
-            allow_update_param = data_dict.get('allow_update')
-            if checkbox_checked is not None:
-                allow_update_param = toolkit.asbool(allow_update_param)
-                model.Session.query(SAML2User).filter_by(name_id=name_id).\
-                    update({'allow_update': allow_update_param})
-                model.Session.commit()
-                if not allow_update_param:
-                    return {'name': data_dict['id']}
-            else:
-                if allow_update_param is not None:
-                    allow_update_param = toolkit.asbool(allow_update_param)
-                    model.Session.query(SAML2User).filter_by(name_id=name_id).\
-                        update({'allow_update': allow_update_param})
-                    model.Session.commit()
-                    if not allow_update_param:
-                        return {'name': data_dict['id']}
-                else:
-                    if not c.is_allow_update and context.get('ignore_auth'):
-                        return ckan_user_update(context, data_dict)
-                    return {'name': data_dict['id']}
-            return ckan_user_update(context, data_dict)
+        allow_user_change = toolkit.asbool(
+            config.get('saml2.allow_user_changes', False))
 
-        else:
+        if not allow_user_change:
             raise logic.ValidationError({'error': [
                 "User accounts managed by Single Sign-On can't be modified"]})
-    else:
-        return ckan_user_update(context, data_dict)
+
+    return ckan_user_update(context, data_dict)
 
 
 class Saml2Plugin(p.SingletonPlugin):
@@ -474,10 +447,9 @@ class Saml2Plugin(p.SingletonPlugin):
             model.Session.commit()
             return model.User.get(new_user_username)
         elif update_user:
-            c = toolkit.c
-            saml2_set_context_variables_after_check_for_user_update(
-                data_dict.get('id', None))
-            if c.allow_user_change and not c.is_allow_update:
+            allow_user_change = toolkit.asbool(
+                config.get('saml2.allow_user_changes', False))
+            if allow_user_change:
                 log.debug("Updating user: %s", data_dict)
                 toolkit.get_action('user_update')(context, data_dict)
         return model.User.get(user_name)

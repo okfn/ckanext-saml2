@@ -83,6 +83,11 @@ saml2.redirect_after_login = '/'
 saml2.sp_initiates_slo = true
 ```
 
+- By default users can not edit their accounts once created, as the IdP is considered the single source of truth. If you want to allow updating all or some details you need to set the following option (potentially overriding the `user/edit_user_form.html` template to only show the relevant fields) (Default is `False`):
+```
+saml2.allow_user_changes=True
+```
+
 - Modify `ckanext/saml2/config/sp_config.py` to suit your needs. The BASE variable at the top need reference  the domain of the service provider (i.e changed to http://catalog.data.gov or wherever CKAN is currently hosted).
 - Place your identity provider's `idp.xml` metadata here: `ckanext/saml2/config/`
 - The certificates need to be placed in this directory: `ckanext/saml2/config/pki` (they need to be named
