@@ -447,6 +447,11 @@ class Saml2Plugin(p.SingletonPlugin):
             model.Session.commit()
             return model.User.get(new_user_username)
         elif update_user:
+            # Ensure the id and name fields are not updated even if present
+            # in the saml2 mapping
+            data_dict['id'] = userobj.id
+            data_dict['name'] = userobj.name
+
             allow_user_change = toolkit.asbool(
                 config.get('saml2.allow_user_changes', False))
             if allow_user_change:
