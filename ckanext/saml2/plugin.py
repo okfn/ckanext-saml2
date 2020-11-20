@@ -210,13 +210,13 @@ def saml2_set_context_variables_after_check_for_user_update(id):
 
 
 def saml2_user_update(context, data_dict):
-    if data_dict.get('password1', '') != '' or data_dict.get('password2', '') != '':
-        raise logic.ValidationError({'password': [
-            "This field cannot be modified."]})
-
     id = logic.get_or_bust(data_dict, 'id')
     name_id = saml2_get_user_name_id(id)
     if name_id is not None:
+        if data_dict.get('password1', '') != '' or data_dict.get('password2', '') != '':
+            raise logic.ValidationError({'password': [
+                "This field cannot be modified."]})
+
         allow_user_change = toolkit.asbool(
             config.get('saml2.allow_user_changes', False))
 
